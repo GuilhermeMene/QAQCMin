@@ -13,7 +13,8 @@ import wx.grid
 import numpy as np
 import sys
 import sqlite3 as sqlite
-
+from qaqc.qaqc_plots import *
+import matplotlib.pyplot as plt
 
 # Set MainFrame 
 class MainFrame( wx.Frame ):
@@ -146,22 +147,15 @@ class MainFrame( wx.Frame ):
 
 		box1.Add( box2, 1, wx.EXPAND, 5 )
 
-
 		self.data_panel.SetSizer( box1 )
 		self.data_panel.Layout()
 		box1.Fit( self.data_panel )
 		self.note.AddPage( self.data_panel, u"DATA", True )
-		self.blank_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.note.AddPage( self.blank_panel, u"BLANK", False )
-		self.dup_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.note.AddPage( self.dup_panel, u"DUP", False )
-		self.std_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.note.AddPage( self.std_panel, u"STANDARD", False )
+		
 		self.report_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self.note.AddPage( self.report_panel, u"Report", False )
 
 		box.Add( self.note, 1, wx.EXPAND |wx.ALL, 5 )
-
 
 		self.SetSizer( box )
 		self.Layout()
@@ -235,8 +229,7 @@ class MainFrame( wx.Frame ):
 					self.Datagrid.SetCellValue(i, 1, "SMP")
 					self.Datagrid.SetCellValue(i, 2, "")
 					self.Datagrid.SetCellValue(i, 3, str(c2[i]))
-					#self.Datagrid.SetCellValue(i, 4, str(c3[i]))
-					#self.Datagrid.SetCellValue(i, 5, str(c4[i]))
+
 
 			except IOError:
 				wx.MessageBox("Cannot open data file '%s'.", pathname, "Cannot open data file")
@@ -277,8 +270,6 @@ class MainFrame( wx.Frame ):
 		self.s_Id = []
 		self.s_type = []
 		self.s_Assay1 = []
-		#self.s_Assay2 = []
-		#self.s_Assay3 = []
 
 		#Get values of datagrid
 
@@ -286,16 +277,32 @@ class MainFrame( wx.Frame ):
 			
 			self.s_Id.append(self.Datagrid.GetCellValue(row, 0))
 			self.s_type.append(self.Datagrid.GetCellValue(row, 1))
-			self.s_Assay1.append(self.Datagrid.GetCellValue(row, 2))
-			#self.s_Assay2.append(self.Datagrid.GetCellValue(row, 3))
-			#self.s_Assay3.append(self.Datagrid.GetCellValue(row, 4))
+			self.s_Assay1.append(self.Datagrid.GetCellValue(row, 3))
 
-		#filter the None of data
-		self.s_Id = list(filter(None, self.s_Id))
-		self.s_type = list(filter(None, self.s_type))	
-		self.s_Assay1 = list(filter(None, self.s_Assay1))
-		#self.s_Assay2 = list(filter(None, self.s_Assay2))
-		#self.s_Assay3 = list(filter(None, self.s_Assay3))
+		if  self.s_Id[0] == '':
+			print(self.s_Id)
+
+			wx.MessageBox("Cannot run the project. \n Datagrid is empty", "Datagrid is empty")
+
+		else:
+			
+			#filter the None of data
+			self.s_Id = list(filter(None, self.s_Id))
+			self.s_type = list(filter(None, self.s_type))
+			self.s_Assay1 = list(filter(None, self.s_Assay1))
+
+		#convert the assay ppb to ppm
+		for i in range(0, len(self.s_Assay1)):
+			if self.s_Assay1[i] == '<5':
+				self.s_Assay1[i] = 0.003
+			else:
+				self.s_Assay1[i] = int(self.s_Assay1[i])/1000
+
+		#Plot blank into graphics
+		print(self.s_Assay1)
+		self.plotBlank()		
+
+
 
 		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
 		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
@@ -303,6 +310,53 @@ class MainFrame( wx.Frame ):
 		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
 		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
 		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
+
+	def plotBlank(self):
+		
+		#set the blank list
+		self.s_blankId = []
+		self.s_blankAssay = []
+		self.s_blank_num =[]
+
+		# Separate the types of QAQC items		
+		for i in range(0, len(self.s_Id)):
+			if self.s_type[i] == "BLANK":
+				self.s_blankId.append(self.s_Id[i])
+				self.s_blankAssay.append(self.s_Assay1[i])
+				self.s_blank_num.append(i)
+
+		print(self.s_blank_num)
+
+		if not self.s_blankAssay:
+			wx.MessageBox("Warning! . \n Blank data is empty", "0 Blank found.")
+
+		else:
+			#set the roundrobin of blank data
+			blank_rr = []
+			blank_x = []
+
+			for i in range(0, 100):
+				blank_x.append(i)
+				blank_rr.append(0.01)
+
+			#setting the plot setup
+			fig , ax = plt.subplots(num="Blank PLot - Quality Control Chat")			
+			ax.scatter(self.s_blank_num, self.s_blankAssay, label='Samples', marker='s')
+			ax.plot(blank_x, blank_rr, label='Blank Limit', color='red')
+			for i, lbl in enumerate(self.s_blankId):
+				ax.annotate(self.s_blankId[i], (self.s_blank_num[i], self.s_blankAssay[i]), rotation=90, verticalalignment='bottom')
+			ax.set_title("Blank Samples Plot - Quality Control Chart")
+			ax.set_xlabel("Samples")
+			ax.set_ylabel("Au (ppm) Fire Assay")
+			ax.set_xticklabels([])
+			ax.set_yticks((0.00250, 0.01250, 0.02250))
+			ax.grid(axis='y')
+			plt.legend()
+			plt.show()
+		
+	def plotSTD(self):
+
+		print("Hello world!!!")
 
 	def Onclose(self, event):
 
