@@ -13,8 +13,9 @@ import wx.grid
 import numpy as np
 import sys
 import sqlite3 as sqlite
-from qaqc.qaqc_plots import *
+import qaqc.qaqc_plots as qaqcplt
 import matplotlib.pyplot as plt
+from collections import Counter	
 
 # Set MainFrame 
 class MainFrame( wx.Frame ):
@@ -162,7 +163,20 @@ class MainFrame( wx.Frame ):
 
 		self.Centre( wx.BOTH )
 
+		#make the celleditor in datagrid 
+		
+		#Set list of type 
+		self.type = ["SMP", "BLANK", "DUP"]
+
+		#Load std for list 
 		self.Load_STD()
+
+		#set Datagrid cell Editor for fill with list
+		type_editor = wx.grid.GridCellChoiceEditor(self.type, True)
+		for i in range(0,100):
+			self.Datagrid.SetCellEditor(i, 1, type_editor)
+
+		
 
 	def clear_DataGrid(self, event):
 		""" This fuction clear datagrid
@@ -182,10 +196,7 @@ class MainFrame( wx.Frame ):
 	def Load_STD(self):
 
 		""" This fuction fill the std combobox in the datagrid choice editor
-		"""	
-
-		#Set list of type 
-		self.type = ["SMP", "BLANK", "DUP"]
+		"""			
 
 		#Connect to database 		
 		self.conn = sqlite.connect('db/standard_db.db')
@@ -197,6 +208,8 @@ class MainFrame( wx.Frame ):
 		#append names to type variable
 		for line in self.nstds:
 			self.type.append(line[0])
+
+		self.conn.close()
 
 	def __del__( self ):
 		pass
@@ -219,13 +232,9 @@ class MainFrame( wx.Frame ):
 
 				c1, c2  = np.loadtxt(pathname, dtype=str, delimiter=',', skiprows=1, unpack=True)
 
-				#set Datagrid cell Editor for fill with list
-				type_editor = wx.grid.GridCellChoiceEditor(self.type, True)
-
-
+				
 				for i in range(0, len(c1)):
-					self.Datagrid.SetCellValue(i, 0, str(c1[i]))
-					self.Datagrid.SetCellEditor(i, 1, type_editor)
+					self.Datagrid.SetCellValue(i, 0, str(c1[i]))					
 					self.Datagrid.SetCellValue(i, 1, "SMP")
 					self.Datagrid.SetCellValue(i, 2, "")
 					self.Datagrid.SetCellValue(i, 3, str(c2[i]))
@@ -280,8 +289,7 @@ class MainFrame( wx.Frame ):
 			self.s_Assay1.append(self.Datagrid.GetCellValue(row, 3))
 
 		if  self.s_Id[0] == '':
-			print(self.s_Id)
-
+			
 			wx.MessageBox("Cannot run the project. \n Datagrid is empty", "Datagrid is empty")
 
 		else:
@@ -299,19 +307,13 @@ class MainFrame( wx.Frame ):
 				self.s_Assay1[i] = int(self.s_Assay1[i])/1000
 
 		#Plot blank into graphics
-		print(self.s_Assay1)
-		self.plotBlank()		
+		self.plotBlank()
 
-
-
-		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
-		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
-		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
-		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
-		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
-		######PAREI AQUI ---> PRECISA IMPLEMENTAR A PLOTAGEM DOS GRAFICOS
+		#plot STD into graphics
+		self.plotSTD()
 
 	def plotBlank(self):
+		"""This function plot the blank data in the chart"""
 		
 		#set the blank list
 		self.s_blankId = []
@@ -325,7 +327,6 @@ class MainFrame( wx.Frame ):
 				self.s_blankAssay.append(self.s_Assay1[i])
 				self.s_blank_num.append(i)
 
-		print(self.s_blank_num)
 
 		if not self.s_blankAssay:
 			wx.MessageBox("Warning! . \n Blank data is empty", "0 Blank found.")
@@ -340,23 +341,126 @@ class MainFrame( wx.Frame ):
 				blank_rr.append(0.01)
 
 			#setting the plot setup
-			fig , ax = plt.subplots(num="Blank PLot - Quality Control Chat")			
-			ax.scatter(self.s_blank_num, self.s_blankAssay, label='Samples', marker='s')
-			ax.plot(blank_x, blank_rr, label='Blank Limit', color='red')
+			fig , ax_blank = plt.subplots(num="Quality Control Chart")			
+			ax_blank.scatter(self.s_blank_num, self.s_blankAssay, label='Samples', marker='s')
+			ax_blank.plot(blank_x, blank_rr, label='Blank Limit', color='red')
 			for i, lbl in enumerate(self.s_blankId):
-				ax.annotate(self.s_blankId[i], (self.s_blank_num[i], self.s_blankAssay[i]), rotation=90, verticalalignment='bottom')
-			ax.set_title("Blank Samples Plot - Quality Control Chart")
-			ax.set_xlabel("Samples")
-			ax.set_ylabel("Au (ppm) Fire Assay")
-			ax.set_xticklabels([])
-			ax.set_yticks((0.00250, 0.01250, 0.02250))
-			ax.grid(axis='y')
+				ax_blank.annotate(self.s_blankId[i], (self.s_blank_num[i], self.s_blankAssay[i]), rotation=90, verticalalignment='bottom')
+			ax_blank.set_title("Blank Samples Plot - Quality Control Chart")
+			ax_blank.set_xlabel("Samples")
+			ax_blank.set_ylabel("Au (ppm) Fire Assay")
+			ax_blank.set_xticklabels([])
+			ax_blank.set_yticks((0.00250, 0.01250, 0.02250))
+			ax_blank.grid(axis='y')
 			plt.legend()
-			plt.show()
+			#plt.show()
 		
 	def plotSTD(self):
+		"""This function read the standards database and get the round robin of std"""
 
-		print("Hello world!!!")
+
+		#get std data from database 
+		#Connect to database 		
+		self.conn = sqlite.connect('db/standard_db.db')
+		self.cursor = self.conn.cursor()
+
+		#Execute query for get std_names
+		self.stdname = self.cursor.execute("""SELECT * FROM Standards""")
+
+		self.std_name = []
+		self.std_value = []
+		self.std_deviation = []
+
+		for line in self.stdname.fetchall():
+			self.std_name.append(line[1])
+			self.std_value.append(line[2])
+			self.std_deviation.append(line[3])
+		
+		self.conn.close()
+
+		#separete the types of qaqc items
+		self.std_project = []
+		self.std_id_proj = []
+		self.std_name_proj = []
+		self.std_assay_proj = []
+
+		for item in range(0, len(self.s_type)):
+
+			for std in range(0, len(self.std_name)):
+
+				if self.s_type[item] == self.std_name[std]:
+
+					self.std_project.append(self.std_name[std])
+					self.std_id_proj.append(self.s_Id[item])
+					self.std_name_proj.append(self.s_type[item])
+					self.std_assay_proj.append(self.s_Assay1[item])
+
+		#setting number of stds
+		num_stds = len(self.std_project)
+		
+		#set the plot of stds
+		fig, ax_std = plt.subplots(1, num_stds, num="Standard Plot - Quality Control Chat", figsize=(15, 6))
+		fig.subplots_adjust(hspace = .05)
+
+		ax_std = ax_std.ravel()
+
+		#set the list of standards
+		for i in range(0, len(self.std_project)):
+
+			#get standard data in database
+			for j in range (0, len(self.std_name)):
+				if self.std_name[j] == self.std_project[i]:
+					self.n_std = self.std_name[j]
+					self.v_std = self.std_value[j]
+					self.d_std = self.std_deviation[j]				
+			
+			#plot the round robin of standard
+			std_1rr = []
+			std_2rr = []
+			std_3rr = []
+			std_1rr_ = []
+			std_2rr_ = []
+			std_3rr_ = []
+			std_x = []
+
+			#set the range of plots
+			for num in range(0, 10):
+				#append the num_x 
+				std_x.append(num)
+				#append the std deviation 
+				std_1rr.append(self.v_std + self.d_std)
+				std_2rr.append(self.v_std + (2*self.d_std))
+				std_3rr.append(self.v_std + (3*self.d_std))
+				std_1rr_.append(self.v_std - self.d_std)
+				std_2rr_.append(self.v_std - (2*self.d_std))
+				std_3rr_.append(self.v_std - (3*self.d_std))
+
+			print(std_x, std_1rr, std_1rr_)
+
+			#plot the 1st round robin (approval)
+			ax_std[i].plot(std_x, std_1rr, label='Approved', color='green')
+			ax_std[i].plot(std_x, std_1rr_, color='green')
+
+			#plot the 2st round robin (revise)
+			ax_std[i].plot(std_x, std_2rr, label='Revise', color='yellow')
+			ax_std[i].plot(std_x, std_2rr_, color='yellow')
+
+			#plot the 2st round robin (revise)
+			ax_std[i].plot(std_x, std_3rr, label='Disapproved', color='red')
+			ax_std[i].plot(std_x, std_3rr_, color='red')
+
+			#plot the scatter with standards			
+			ax_std[i].scatter(i, self.std_assay_proj[i], label='Standars', marker='s')
+
+			#set the axis 
+			ax_std[i].set_title("Standard {} Plot - Quality Control Chart".format(self.std_name_proj[i]))
+			ax_std[i].set_xticklabels([])
+			ax_std[i].set_xlabel("Samples")
+			ax_std[i].set_ylabel("Au (ppm) Fire Assay")
+			ax_std[i].grid(axis='y')
+
+		plt.legend()
+		plt.show()
 
 	def Onclose(self, event):
 

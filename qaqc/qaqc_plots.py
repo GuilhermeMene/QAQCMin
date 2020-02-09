@@ -20,7 +20,7 @@ class STD_Plot(wx.Panel):
         wx.Panel.__init__(self, parent, id=id, **kwargs)
 
         #set the plot settings
-        self.fig = Figure(dpi=300, figsize=(5, 5))
+        self.fig = Figure()
         self.canvas = FigureCanvas(self, -1, self.fig)
         self.toolbar = NavigationToolbar(self.canvas)
         self.toolbar.Realize()
@@ -45,7 +45,7 @@ class PlotNotebook(wx.Panel):
 
     #set function to add the pages into notebook
     def add(self, name="Plot"):
-        page = Plot(self.nb)
+        page = STD_Plot(self.nb)
         self.nb.AddPage(page, name)
         return page.figure
 
