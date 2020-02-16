@@ -13,7 +13,6 @@ import wx.grid
 import numpy as np
 import sys
 import sqlite3 as sqlite
-import qaqc.qaqc_plots as qaqcplt
 import matplotlib.pyplot as plt
 from collections import Counter	
 
@@ -380,92 +379,139 @@ class MainFrame( wx.Frame ):
 
 		#separete the types of qaqc items
 		self.std_project = []
-		self.std_id_proj = []
-		self.std_name_proj = []
-		self.std_assay_proj = []
+		self.standard_project = []
 
-		for item in range(0, len(self.s_type)):
-
-			for std in range(0, len(self.std_name)):
-
+		for std in range(0, len(self.std_name)):
+			self.standard_project.append([])
+			for item in range(0, len(self.s_type)):			
 				if self.s_type[item] == self.std_name[std]:
-
-					self.std_project.append(self.std_name[std])
-					self.std_id_proj.append(self.s_Id[item])
-					self.std_name_proj.append(self.s_type[item])
-					self.std_assay_proj.append(self.s_Assay1[item])
+					self.standard_project[std].append([self.s_type[item], self.s_Id[item], self.s_Assay1[item]])
+		
+		self.standard_project = list(filter(None, self.standard_project))
+		print(len(self.standard_project), self.standard_project)
 
 		#setting number of stds
-		num_stds = len(self.std_project)
-		
-		#set the plot of stds
-		fig, ax_std = plt.subplots(1, num_stds, num="Standard Plot - Quality Control Chat", figsize=(15, 6))
-		fig.subplots_adjust(hspace = .05)
+		num_stds = len(self.standard_project)
+		print(num_stds)
 
-		ax_std = ax_std.ravel()
+		if num_stds <= 1:			
+			#set multiple plot of stds
+			fig, ax_std = plt.subplots(num="Standard Plot - Quality Control Chat", figsize=(8, 6))
+			fig.subplots_adjust(top= 0.90, bottom= 0.10, left= 0.10, right= 0.95, wspace = .15)
 
-		#set the list of standards
-		for i in range(0, len(self.std_project)):
-
-			#get standard data in database
-			for j in range (0, len(self.std_name)):
-				if self.std_name[j] == self.std_project[i]:
-					self.n_std = self.std_name[j]
-					self.v_std = self.std_value[j]
-					self.d_std = self.std_deviation[j]				
-			
-			#plot the round robin of standard
-			std_1rr = []
-			std_2rr = []
-			std_3rr = []
-			std_1rr_ = []
-			std_2rr_ = []
-			std_3rr_ = []
-			std_x = []
-
-			#set the range of plots
-			for num in range(0, 10):
-				#append the num_x 
-				std_x.append(num)
-				#append the std deviation 
-				std_1rr.append(self.v_std + self.d_std)
-				std_2rr.append(self.v_std + (2*self.d_std))
-				std_3rr.append(self.v_std + (3*self.d_std))
-				std_1rr_.append(self.v_std - self.d_std)
-				std_2rr_.append(self.v_std - (2*self.d_std))
-				std_3rr_.append(self.v_std - (3*self.d_std))
-
-			print(std_x, std_1rr, std_1rr_)
+			standard_rr, standard_x = self.getRoundRobin()	
 
 			#plot the 1st round robin (approval)
-			ax_std[i].plot(std_x, std_1rr, label='Approved', color='green')
-			ax_std[i].plot(std_x, std_1rr_, color='green')
+			ax_std.plot(standard_x, standard_rr[0], label='Approved', color='green')
+			ax_std.plot(standard_x, standard_rr[3], color='green')
 
 			#plot the 2st round robin (revise)
-			ax_std[i].plot(std_x, std_2rr, label='Revise', color='yellow')
-			ax_std[i].plot(std_x, std_2rr_, color='yellow')
+			ax_std.plot(standard_x, standard_rr[1], label='Revise', color='yellow')
+			ax_std.plot(standard_x, standard_rr[4], color='yellow')
 
 			#plot the 2st round robin (revise)
-			ax_std[i].plot(std_x, std_3rr, label='Disapproved', color='red')
-			ax_std[i].plot(std_x, std_3rr_, color='red')
+			ax_std.plot(standard_x, standard_rr[2], label='Disapproved', color='red')
+			ax_std.plot(standard_x, standard_rr[5], color='red')
 
-			#plot the scatter with standards			
-			ax_std[i].scatter(i, self.std_assay_proj[i], label='Standars', marker='s')
+			if len(self.standard_project[0]) > 1:
+				for sample in range(0, len(self.standard_project[0])):
+					#plot same standard in the figure
+					ax_std.scatter(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s')
+					ax_std.annotate(self.standard_project[0][sample][1], (sample, self.standard_project[0][sample][2] + (self.standard_project[0][sample][2]* 0.05)), 
+									rotation=90, verticalalignment='bottom')
 
+			else:
+				#plot a standard in the figure
+				ax_std.scatter(0, self.standard_project[0][0][2], label='Standard', color= 'b', marker='s')
+				ax_std.annotate(self.standard_project[0][0][1], (0, self.standard_project[0][0][2] + (self.standard_project[0][0][2]* 0.05)), 
+								rotation=90, verticalalignment='bottom')
+			
 			#set the axis 
-			ax_std[i].set_title("Standard {} Plot - Quality Control Chart".format(self.std_name_proj[i]))
-			ax_std[i].set_xticklabels([])
-			ax_std[i].set_xlabel("Samples")
-			ax_std[i].set_ylabel("Au (ppm) Fire Assay")
-			ax_std[i].grid(axis='y')
+			ax_std.set_title("Standard {} Plot - Quality Control Chart".format(self.standard_project[0][0][0]))
+			ax_std.set_xticklabels([])
+			ax_std.set_xlabel("Samples")
+			ax_std.set_ylabel("Au (ppm) Fire Assay")
+			ax_std.grid(axis='y')
 
-		plt.legend()
+		else: 
+
+			if num_stds > 2: 
+				#set a plot in the figure for more 2 plots
+				fig, ax_std = plt.subplots(1, num_stds, num="Standard Plot - Quality Control Chat", figsize=(18, 6))
+
+			else: 
+				#set a plot in the figure for until 2 plots
+				fig, ax_std = plt.subplots(1, num_stds, num="Standard Plot - Quality Control Chat", figsize=(15, 6))
+			
+			fig.subplots_adjust(top= 0.90, bottom= 0.10, left= 0.05, right= 0.95, wspace = .15)		
+			ax_std = ax_std.ravel()	
+
+
+			#set list of standards and plot		
+			for i in range(0, len(self.standard_project)):
+
+				standard_rr, standard_x = self.getRoundRobin(i)		
+
+				#plot the 1st round robin (approval)
+				ax_std[i].plot(standard_x, standard_rr[0], label='Approved', color='green')
+				ax_std[i].plot(standard_x, standard_rr[3], color='green')
+
+				#plot the 2st round robin (revise)
+				ax_std[i].plot(standard_x, standard_rr[1], label='Revise', color='yellow')
+				ax_std[i].plot(standard_x, standard_rr[4], color='yellow')
+
+				#plot the 2st round robin (revise)
+				ax_std[i].plot(standard_x, standard_rr[2], label='Disapproved', color='red')
+				ax_std[i].plot(standard_x, standard_rr[5], color='red')
+
+				for sample in range(0, len(self.standard_project[i])):
+					#plot the scatter with standards			
+					ax_std[i].scatter(sample, self.standard_project[i][sample][2], label='Standard', color= 'b', marker='s')
+					ax_std[i].annotate(self.standard_project[i][sample][1], (sample, self.standard_project[i][sample][2] + (self.standard_project[i][sample][2]* 0.05)),
+										rotation=90, verticalalignment='bottom')
+
+				#set the axis 
+				ax_std[i].set_title("Standard {} Plot - Quality Control Chart".format(self.standard_project[i][0][0]))
+				ax_std[i].set_xticklabels([])
+				ax_std[i].set_xlabel("Samples")
+				ax_std[i].set_ylabel("Au (ppm) Fire Assay")
+				ax_std[i].grid(axis='y')
+
+		plt.legend(loc='upper right')
 		plt.show()
+
+	def getRoundRobin(self, standard_index = 0):
+
+		#get round robin of standard database
+		standard_rr = [] 
+
+		std_x = []
+		for j in range(0, len(self.std_name)):
+			if self.std_name[j] == self.standard_project[standard_index][0][0]:
+				self.n_std = self.std_name[j]
+				self.v_std = self.std_value[j]
+				self.d_std = self.std_deviation[j]
+			
+		#set the range of plots
+		for n in range(0, 20):
+			standard_rr.append([])
+		#set the round robin
+		for num in range(0, 20):
+			#append the num_x 
+			std_x.append(num)
+			#append the std deviation 
+			standard_rr[0].append(self.v_std + self.d_std) #set the approved (+)
+			standard_rr[1].append(self.v_std + (2*self.d_std))#set the revise (+)
+			standard_rr[2].append(self.v_std + (3*self.d_std))#set the disapproved (+)
+			standard_rr[3].append(self.v_std - self.d_std)#set the approved (-)
+			standard_rr[4].append(self.v_std - (2*self.d_std))#set the revise (-)
+			standard_rr[5].append(self.v_std - (3*self.d_std))#set the disapproved (-)
+
+		return standard_rr, std_x
 
 	def Onclose(self, event):
 
 		sys.exit(0)
-
 
 #Set class of dialog
 class STDDialog( wx.Dialog ):
