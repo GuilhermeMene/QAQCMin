@@ -282,10 +282,8 @@ class MainFrame( wx.Frame ):
 		print("Hello World!")
 
 	def ExportReport(self, event):
-		""" This fuction export the plots report into PDF
+		""" This fuction open a dialog for print report
 		"""
-		print("Hello World!")
-
 		self.report_html.RunScript("window.print()")
 
 	def StandardDB(self, event):
