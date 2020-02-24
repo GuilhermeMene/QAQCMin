@@ -11,11 +11,14 @@ import wx
 import wx.xrc
 import wx.lib.agw.ribbon as rb
 import wx.grid
+import wx.html2
 import numpy as np
 import sys
 import sqlite3 as sqlite
 import matplotlib.pyplot as plt
 import standard_dialog
+import datetime as date
+import os
 
 # Set MainFrame
 class MainFrame( wx.Frame ):
@@ -39,7 +42,7 @@ class MainFrame( wx.Frame ):
 		self.rbb1 = rb.RibbonButtonBar( self.file_panel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
 		self.rbb1.AddSimpleButton( open_Proj, u"Open Project", wx.Bitmap( u"img/open_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
 		self.rbb1.AddSimpleButton( save_Proj, u"Save Project", wx.Bitmap( u"img/save_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
-		self.rbb1.AddSimpleButton( exp_Rep, u"Save Report", wx.Bitmap( u"img/report_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
+		self.rbb1.AddSimpleButton( exp_Rep, u"Print Report", wx.Bitmap( u"img/report_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
 		self.db_panel = rb.RibbonPanel( self.Page1, wx.ID_ANY, wx.EmptyString , wx.NullBitmap , wx.DefaultPosition, wx.DefaultSize, wx.lib.agw.ribbon.RIBBON_PANEL_DEFAULT_STYLE )
 		self.rbb2 = rb.RibbonButtonBar( self.db_panel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
 		self.rbb2.AddSimpleButton( std_db, u"Standard Database", wx.Bitmap( u"img/database_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
@@ -143,7 +146,6 @@ class MainFrame( wx.Frame ):
 		#Set open file data function
 		self.run_bot.Bind(wx.EVT_BUTTON, self.runProject)
 
-
 		box2.Add( ( 0, 0), 1, wx.EXPAND, 5 )
 
 		box1.Add( box2, 1, wx.EXPAND, 5 )
@@ -153,7 +155,21 @@ class MainFrame( wx.Frame ):
 		box1.Fit( self.data_panel )
 		self.note.AddPage( self.data_panel, u"DATA", True )
 
+		#Set the report panel
 		self.report_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		gs_report = wx.BoxSizer(wx.VERTICAL)
+
+		self.report_html = wx.html2.WebView.New( self.report_panel) 
+
+		#self.report = wx.richtext.RichTextCtrl( self.report_panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 
+		#										0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+
+		gs_report.Add( self.report_html, 1, wx.EXPAND |wx.ALL, 5 )
+
+		self.report_panel.SetSizer( gs_report )
+		self.report_panel.Layout()
+		gs_report.Fit( self.report_panel )
+
 		self.note.AddPage( self.report_panel, u"Report", False )
 
 		box.Add( self.note, 1, wx.EXPAND |wx.ALL, 5 )
@@ -168,6 +184,8 @@ class MainFrame( wx.Frame ):
 
 		#Load std for list
 		self.Load_STD()
+
+		#self.make_Report()
 
 		#set Datagrid cell Editor for fill with list
 		self.type_editor = wx.grid.GridCellChoiceEditor(self.type, True)
@@ -267,6 +285,8 @@ class MainFrame( wx.Frame ):
 		""" This fuction export the plots report into PDF
 		"""
 		print("Hello World!")
+
+		self.report_html.RunScript("window.print()")
 
 	def StandardDB(self, event):
 		""" This fuction open the Standard managment dilaog.
@@ -398,14 +418,26 @@ class MainFrame( wx.Frame ):
 			if len(qaqc_items) > 0:	
 
 				wx.MessageBox("Warning! . \n {} data is empty".format(qaqc_items), "0 {} found.".format(qaqc_items))
+				self.make_Report() #make the repost first
 				plt.show()
 
 			else:
-				plt.show()	
+				self.make_Report() #make the report first 
+				plt.show()
 
+	def make_Report(self):
+
+		#get date for report
+		self.today = date.datetime.today()
+		self.today = self.today.strftime("%d/%m/%Y")
+
+		#setting the html viewer 
+		self.report_html.LoadURL("file://{}/report.html".format(os.getcwd()))
 
 	def plotBlank(self):
 		"""This function plot the blank data in the chart"""
+		
+
 		
 		#set the roundrobin of blank data
 		blank_rr = []
@@ -416,7 +448,7 @@ class MainFrame( wx.Frame ):
 
 		#setting the plot setup
 		fig , ax_blank = plt.subplots(num="Blank Plot - Quality Control Chart", figsize=(8, 6))
-		ax_blank.scatter(self.s_blank_num, self.s_blankAssay, label='Samples', marker='s')
+		ax_blank.plot(self.s_blank_num, self.s_blankAssay, label='Samples', marker='s', linestyle='--')
 		ax_blank.plot(blank_x, blank_rr, label='Blank Limit', color='red')
 		for i, lbl in enumerate(self.s_blankId):
 			ax_blank.annotate(self.s_blankId[i], (self.s_blank_num[i], self.s_blankAssay[i] + 0.0005), rotation=90, verticalalignment='bottom')
