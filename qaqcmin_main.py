@@ -34,6 +34,7 @@ class MainFrame( wx.Frame ):
 		save_Proj = wx.Window.NewControlId()
 		exp_Rep = wx.Window.NewControlId()
 		std_db = wx.Window.NewControlId()
+		open_Setting = wx.Window.NewControlId()
 		exit_bot = wx.Window.NewControlId()
 
 		self.rb = rb.RibbonBar( self , wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.lib.agw.ribbon.RIBBON_BAR_DEFAULT_STYLE )
@@ -48,6 +49,7 @@ class MainFrame( wx.Frame ):
 		self.rbb2.AddSimpleButton( std_db, u"Standard Database", wx.Bitmap( u"img/database_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
 		self.exit_panel = rb.RibbonPanel( self.Page1, wx.ID_ANY, wx.EmptyString , wx.NullBitmap , wx.DefaultPosition, wx.DefaultSize, wx.lib.agw.ribbon.RIBBON_PANEL_DEFAULT_STYLE )
 		self.rbb3 = rb.RibbonButtonBar( self.exit_panel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
+		self.rbb3.AddSimpleButton( open_Setting, u" Settings", wx.Bitmap( u"img/set_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
 		self.rbb3.AddSimpleButton( exit_bot, u" Exit", wx.Bitmap( u"img/exit_47.png", wx.BITMAP_TYPE_ANY ), wx.EmptyString)
 		self.rb.Realize()
 
@@ -55,7 +57,8 @@ class MainFrame( wx.Frame ):
 		self.rbb1.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.openProject, id=open_Proj)
 		self.rbb1.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.SaveProject, id=save_Proj)
 		self.rbb1.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.ExportReport, id=exp_Rep)
-		self.rbb2.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.StandardDB, id=std_db)
+		self.rbb2.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.StandardDB, id=std_db)		
+		self.rbb3.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.open_Setting,None, id=open_Setting)
 		self.rbb3.Bind(rb.EVT_RIBBONBUTTONBAR_CLICKED, self.Onclose,None, id=exit_bot)
 
 		box.Add( self.rb, 0, wx.ALL|wx.EXPAND, 5 )
@@ -98,6 +101,7 @@ class MainFrame( wx.Frame ):
 
 		# Cell Defaults
 		self.Datagrid.SetDefaultCellAlignment( wx.ALIGN_CENTER, wx.ALIGN_TOP )
+		
 		box1.Add( self.Datagrid, 0, wx.ALL, 5 )
 
 		box2 = wx.BoxSizer( wx.VERTICAL )
@@ -105,26 +109,22 @@ class MainFrame( wx.Frame ):
 
 		self.m_staticText2 = wx.StaticText( self.data_panel, wx.ID_ANY, u"Open Data File ", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText2.Wrap( -1 )
-
 		box2.Add( self.m_staticText2, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
 		self.open_file = wx.BitmapButton( self.data_panel, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, wx.BU_AUTODRAW|0 )
-
 		self.open_file.SetBitmap( wx.Bitmap( u"img/opendata_47.png", wx.BITMAP_TYPE_ANY ) )
 		box2.Add( self.open_file, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
         #Set open file data function
 		self.open_file.Bind(wx.EVT_BUTTON, self.LoadData)
 
-		box2.Add( ( 0, 0), 1, 0, 5 )
+		box2.Add( ( 0, 0), 1, 0, 5)
 
 		self.m_staticText2 = wx.StaticText( self.data_panel, wx.ID_ANY, u"Clear Data ", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText2.Wrap( -1 )
-
 		box2.Add( self.m_staticText2, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
 		self.clear_datagrid = wx.BitmapButton( self.data_panel, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, wx.BU_AUTODRAW|0 )
-
 		self.clear_datagrid.SetBitmap( wx.Bitmap( u"img/trash_47.png", wx.BITMAP_TYPE_ANY ) )
 		box2.Add( self.clear_datagrid, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
@@ -133,13 +133,32 @@ class MainFrame( wx.Frame ):
 
 		box2.Add( ( 0, 0), 1, 0, 5 )
 
+		self.m_sline = wx.StaticLine( self.data_panel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		box2.Add(self.m_sline, 0, wx.EXPAND |wx.ALL, 5 )
+
+		#set the Technical Manager
+		self.m_st_technicalman = wx.StaticText(self.data_panel, wx.ID_ANY, u"Technical Manager:", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_st_technicalman.Wrap( -1 )
+		box2.Add(self.m_st_technicalman, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+		
+
+		self.m_Tech = wx.TextCtrl( self.data_panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		box2.Add(self.m_Tech, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+		#set the Batch name
+		self.m_st_batch = wx.StaticText(self.data_panel, wx.ID_ANY, u"Batch Name:", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_st_batch.Wrap( -1 )
+		box2.Add(self.m_st_batch, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+		self.m_Bath = wx.TextCtrl( self.data_panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		box2.Add(self.m_Bath, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+
 		self.m_staticText3 = wx.StaticText( self.data_panel, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText3.Wrap( -1 )
-
 		box2.Add( self.m_staticText3, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
 		self.run_bot = wx.BitmapButton( self.data_panel, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, wx.BU_AUTODRAW|0 )
-
 		self.run_bot.SetBitmap( wx.Bitmap( u"img/run_47.png", wx.BITMAP_TYPE_ANY ) )
 		box2.Add( self.run_bot, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
@@ -160,9 +179,6 @@ class MainFrame( wx.Frame ):
 		gs_report = wx.BoxSizer(wx.VERTICAL)
 
 		self.report_html = wx.html2.WebView.New( self.report_panel) 
-
-		#self.report = wx.richtext.RichTextCtrl( self.report_panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 
-		#										0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
 
 		gs_report.Add( self.report_html, 1, wx.EXPAND |wx.ALL, 5 )
 
@@ -185,13 +201,16 @@ class MainFrame( wx.Frame ):
 		#Load std for list
 		self.Load_STD()
 
-		#self.make_Report()
-
 		#set Datagrid cell Editor for fill with list
 		self.type_editor = wx.grid.GridCellChoiceEditor(self.type, True)
 		#set the editor cell
 		for i in range(0,100):
 			self.Datagrid.SetCellEditor(i, 1, self.type_editor)
+
+	def open_Setting(self, event):
+		"""This function open the setting dialog
+		"""
+		print("Helloworld")
 
 
 	def clear_DataGrid(self, event):
@@ -311,6 +330,15 @@ class MainFrame( wx.Frame ):
 			self.s_dup.append(self.Datagrid.GetCellValue(row, 2))
 			self.s_Assay1.append(self.Datagrid.GetCellValue(row, 3))
 
+
+		#get the batch and technical manager values
+
+		#get the batch name 
+		self.batch_name = self.m_Bath.GetValue()
+
+		#get the technical manager name
+		self.technical = self.m_Tech.GetValue()
+
 		if  self.s_Id[0] == '':
 
 			wx.MessageBox("Cannot run the project. \n Datagrid is empty", "Datagrid is empty")
@@ -332,7 +360,7 @@ class MainFrame( wx.Frame ):
 
 			##############################
 			#getting data of blank samples
-					#set the blank list
+			#set the blank list
 			self.s_blankId = []
 			self.s_blankAssay = []
 			self.s_blank_num =[]
