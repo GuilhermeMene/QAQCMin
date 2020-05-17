@@ -11,12 +11,12 @@ import wx
 import wx.xrc
 import wx.lib.agw.ribbon as rb
 import wx.grid
-import wx.html2
+#import wx.html2
 import numpy as np
 import sys
 import sqlite3 as sqlite
 import matplotlib.pyplot as plt
-import standard_dialog
+import src.standard_dialog
 import datetime as date
 import os
 
@@ -178,9 +178,9 @@ class MainFrame( wx.Frame ):
 		self.report_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gs_report = wx.BoxSizer(wx.VERTICAL)
 
-		self.report_html = wx.html2.WebView.New( self.report_panel) 
+		#self.report_html = wx.html2.WebView.New( self.report_panel) 
 
-		gs_report.Add( self.report_html, 1, wx.EXPAND |wx.ALL, 5 )
+		#gs_report.Add( self.report_html, 1, wx.EXPAND |wx.ALL, 5 )
 
 		self.report_panel.SetSizer( gs_report )
 		self.report_panel.Layout()
@@ -210,7 +210,7 @@ class MainFrame( wx.Frame ):
 	def open_Setting(self, event):
 		"""This function open the setting dialog
 		"""
-		print("Helloworld")
+		wx.MessageBox("This function is not implemented yet", "Sorry")
 
 
 	def clear_DataGrid(self, event):
@@ -293,22 +293,22 @@ class MainFrame( wx.Frame ):
 	def openProject(self, event):
 		""" This fuction open project file
 		"""
-		print("Hello World!")
+		wx.MessageBox("This function is not implemented yet", "Sorry")
 
 	def SaveProject(self, event):
 		""" This fuction save the project file
 		"""
-		print("Hello World!")
+		wx.MessageBox("This function is not implemented yet", "Sorry")
 
 	def ExportReport(self, event):
 		""" This fuction open a dialog for print report
 		"""
-		self.report_html.RunScript("window.print()")
+		wx.MessageBox("This function is not implemented yet", "Sorry")
 
 	def StandardDB(self, event):
 		""" This fuction open the Standard managment dilaog.
 		"""
-		std_dialog = standard_dialog.STDDialog(self)
+		std_dialog = src.standard_dialog.STDDialog(self)
 		std_dialog.Show()
 
 	def runProject(self, event):
@@ -457,13 +457,8 @@ class MainFrame( wx.Frame ):
 		self.today = date.datetime.today()
 		self.today = self.today.strftime("%d/%m/%Y")
 
-		#setting the html viewer 
-		self.report_html.LoadURL("file://{}/report.html".format(os.getcwd()))
-
 	def plotBlank(self):
-		"""This function plot the blank data in the chart"""
-		
-
+		"""This function plot the blank data in the chart"""	
 		
 		#set the roundrobin of blank data
 		blank_rr = []
@@ -514,7 +509,8 @@ class MainFrame( wx.Frame ):
 			if len(self.standard_project[0]) > 1:
 				for sample in range(0, len(self.standard_project[0])):
 					#plot same standard in the figure
-					ax_std.scatter(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s')
+					ax_blank.plot(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s', linestyle='--')
+					#ax_std.scatter(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s')
 					ax_std.annotate(self.standard_project[0][sample][1], (sample, self.standard_project[0][sample][2] + (self.standard_project[0][sample][2]* 0.05)),
 									rotation=90, verticalalignment='bottom')
 
@@ -564,7 +560,8 @@ class MainFrame( wx.Frame ):
 
 				for sample in range(0, len(self.standard_project[i])):
 					#plot the scatter with standards
-					ax_std[i].scatter(sample, self.standard_project[i][sample][2], color= 'b', marker='s')
+					
+					ax_std[i].plot(sample, self.standard_project[i][sample][2], color= 'b', marker='s', linestyle='--')
 					ax_std[i].annotate(self.standard_project[i][sample][1], (sample, self.standard_project[i][sample][2] + (self.standard_project[i][sample][2]* 0.05)),
 											rotation=90, verticalalignment='bottom')
 	
@@ -631,7 +628,7 @@ class MainFrame( wx.Frame ):
 		ax_dup.plot(XDn5, YDn5, color='yellow')
 
 		#plot the values of duplicate samples (x is the original sample and y is the dupicate of sample)
-		ax_dup.scatter(self.sample_assay, dup_assay, label='Duplicate samples', marker='s', color='b')
+		ax_dup.plot(self.sample_assay, dup_assay, label='Duplicate samples', marker='s', color='b', linestyle='--')
 
 		ax_dup.set_title("Duplicates Samples Plot - Quality Control Chart")
 		ax_dup.set_xlabel("Au (ppm) Fire Assay")
@@ -642,7 +639,7 @@ class MainFrame( wx.Frame ):
 		plt.legend(loc='lower right')
 		
 	def get_ID(self):
-		"""This get id for the duplicate samples"""
+		"""This function get id for the duplicate samples"""
 
 		#filkter the empty values of list
 		self.s_dup = list(filter(None, self.s_dup))
