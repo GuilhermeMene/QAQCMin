@@ -86,13 +86,13 @@ class makeReport():
 
         if not len(blank_data):
             #image of chart 
-            blank_path = (os.path.normpath(os.getcwd()) + "/img/nochart.png")
+            blank_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(blank_path, x= None, y = None, w = 170)
 
         else:
             #image of chart 
-            blank_path = (os.path.normpath(os.getcwd()) + "/.temp/blankchart.png")
+            blank_path = (os.path.normpath(os.getcwd()) + "/.chart/blankchart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(blank_path, x= None, y = None, w = 170)
 
@@ -139,13 +139,13 @@ class makeReport():
 
         if not len(dup_data):
             #image of chart 
-            dup_path = (os.path.normpath(os.getcwd()) + "/img/nochart.png")
+            dup_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(dup_path, x= None, y = None, w = 170)
 
         else:
             #image of chart 
-            dup_path = (os.path.normpath(os.getcwd()) + "/.temp/dupchart.png")
+            dup_path = (os.path.normpath(os.getcwd()) + "/.chart/dupchart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(dup_path, x= None, y = None, w = 170)
 
@@ -204,13 +204,13 @@ class makeReport():
 
         if not len(std_data):
             #image of chart 
-            std_path = (os.path.normpath(os.getcwd()) + "/img/nochart.png")
+            std_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(std_path, x= None, y = None, w = 170)
 
         else:
             #image of chart 
-            std_path = (os.path.normpath(os.getcwd()) + "/.temp/stdchart.png")
+            std_path = (os.path.normpath(os.getcwd()) + "/.chart/stdchart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(std_path, x= None, y = None, w = 170)
 

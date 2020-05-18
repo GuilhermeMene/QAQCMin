@@ -537,7 +537,7 @@ class MainFrame( wx.Frame ):
 		ax_blank.set_yticks((0.00250, 0.01250, 0.02250))
 		ax_blank.grid(axis='y')
 		plt.legend()
-		blank_path = os.getcwd()+ "/.temp/blankchart.png"
+		blank_path = os.getcwd()+ "/.chart/blankchart.png"
 		plt.savefig(blank_path, dpi = 150, quality = 95)
 
 	def plotSTD(self):
@@ -633,7 +633,7 @@ class MainFrame( wx.Frame ):
 				ax_std[i].grid(axis='y')
 
 				plt.legend(loc='upper right')
-		std_path = os.getcwd()+ "/.temp/stdchart.png"
+		std_path = os.getcwd()+ "/.chart/stdchart.png"
 		plt.savefig(std_path, dpi = 150, quality = 95)
 
 	def getRoundRobin(self, standard_index = 0):
@@ -699,7 +699,7 @@ class MainFrame( wx.Frame ):
 		ax_dup.grid(axis='y')
 		plt.legend(loc='lower right')
 
-		dup_path = os.getcwd()+ "/.temp/dupchart.png"
+		dup_path = os.getcwd()+ "/.chart/dupchart.png"
 		plt.savefig(dup_path, dpi = 150, quality = 95)
 		
 	def get_Dupassay(self):
