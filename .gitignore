@@ -136,3 +136,7 @@ dmypy.json
 .vscode/extensions.json
 *.code-workspace
 
+
+#WxPython
+.xrc 
+

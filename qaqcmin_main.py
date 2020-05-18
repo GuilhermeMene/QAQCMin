@@ -11,7 +11,6 @@ import wx
 import wx.xrc
 import wx.lib.agw.ribbon as rb
 import wx.grid
-#import wx.html2
 import numpy as np
 import sys
 import sqlite3 as sqlite
@@ -19,6 +18,7 @@ import matplotlib.pyplot as plt
 import src.standard_dialog
 import datetime as date
 import os
+import src.make_Report as mr
 
 # Set MainFrame
 class MainFrame( wx.Frame ):
@@ -178,8 +178,6 @@ class MainFrame( wx.Frame ):
 		self.report_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gs_report = wx.BoxSizer(wx.VERTICAL)
 
-		#self.report_html = wx.html2.WebView.New( self.report_panel) 
-
 		#gs_report.Add( self.report_html, 1, wx.EXPAND |wx.ALL, 5 )
 
 		self.report_panel.SetSizer( gs_report )
@@ -318,7 +316,7 @@ class MainFrame( wx.Frame ):
 
 		self.s_Id = []
 		self.s_type = []
-		self.s_dup = []
+		self.DupId = []
 		self.s_Assay1 = []
 
 		#Get values of datagrid
@@ -327,7 +325,7 @@ class MainFrame( wx.Frame ):
 
 			self.s_Id.append(self.Datagrid.GetCellValue(row, 0))
 			self.s_type.append(self.Datagrid.GetCellValue(row, 1))
-			self.s_dup.append(self.Datagrid.GetCellValue(row, 2))
+			self.DupId.append(self.Datagrid.GetCellValue(row, 2))
 			self.s_Assay1.append(self.Datagrid.GetCellValue(row, 3))
 
 
@@ -349,21 +347,25 @@ class MainFrame( wx.Frame ):
 			self.s_Id = list(filter(None, self.s_Id))
 			self.s_type = list(filter(None, self.s_type))
 			self.s_Assay1 = list(filter(None, self.s_Assay1))
+			self.DupId = list(filter(None, self.DupId))
 
 			#convert the assay ppb to ppm
 			for i in range(0, len(self.s_Assay1)):
-				if self.s_Assay1[i] == '<5':
-					self.s_Assay1[i] = 0.003
-				else:
-					self.s_Assay1[i] = int(self.s_Assay1[i])/1000
+				
+				if self.s_Assay1[i] == 'N.A.':
+					self.s_Assay1[i] = float(0.003)
 
+				elif self.s_Assay1[i] == '<5':
+					self.s_Assay1[i] = float(0.003)
+				else:
+					self.s_Assay1[i] = float(int(self.s_Assay1[i])/1000)
 
 			##############################
 			#getting data of blank samples
 			#set the blank list
-			self.s_blankId = []
 			self.s_blankAssay = []
 			self.s_blank_num =[]
+			self.s_blankId = [] 
 
 			# Separate the types of QAQC items
 			for i in range(0, len(self.s_Id)):
@@ -392,27 +394,34 @@ class MainFrame( wx.Frame ):
 
 			self.conn.close()
 
-			#separete the types of qaqc items
+			#separete the types of qaqc items STANDARD
 			self.standard_project = []
 
 			for std in range(0, len(self.std_name)):
 				self.standard_project.append([])
 				for item in range(0, len(self.s_type)):
 					if self.s_type[item] == self.std_name[std]:
-						self.standard_project[std].append([self.s_type[item], self.s_Id[item], self.s_Assay1[item]])
+
+						std_status = self.get_Std_status(self.std_deviation[std], self.s_Assay1[item], self.std_value[std])
+						self.standard_project[std].append([self.s_type[item], self.s_Id[item], self.s_Assay1[item], self.std_value[std], 
+															self.std_deviation[std], (abs(self.s_Assay1[item] - self.std_value[std]) / self.std_value[std]) *100,
+															std_status])
 
 			self.standard_project = list(filter(None, self.standard_project))
 
+
 			##############################
-			#getting the duplicate data
-			self.sample_assay = []
+			#separete the types of qaqc items DUPLICATE
+			self.s_DupAssay = [] #is the resutl of the sample that have a duplicate 
+			self.s_DupId = [] #is the Id of the sample that have a duplicate 
+			#self.DupId is the Id of duplicate sample
+			#self.DupAssay is the assay of duplicate sample
 
 			# Get duplicates of datagrid
 			for i in range(0, len(self.s_Id)):
 				if self.s_type[i] == "DUP":							
-
-					self.sample_assay.append(self.s_Assay1[i])
-
+					self.s_DupId.append(self.s_Id[i])
+					self.s_DupAssay.append(self.s_Assay1[i])
 
 			##############################
 			#check what the data exist or not for plot into graphics
@@ -426,7 +435,7 @@ class MainFrame( wx.Frame ):
 			else:
 				qaqc_items += "Blank " 		
 
-			if len(self.sample_assay) > 0:
+			if len(self.s_DupAssay) > 0:
 				#plot DUP into graphics
 				self.plotDUP()
 
@@ -453,9 +462,56 @@ class MainFrame( wx.Frame ):
 
 	def make_Report(self):
 
-		#get date for report
-		self.today = date.datetime.today()
-		self.today = self.today.strftime("%d/%m/%Y")
+		self.blank_project = []
+		self.dup_project = []
+
+		#preparing the blank data
+		if len(self.s_blankId) > 0:			
+			self.blank_status = []			
+
+			for i in range(0, len(self.s_blankAssay)):
+				if self.s_blankAssay[i] > 0.01:
+					self.blank_status.append("Disaproved")
+				else: 
+					self.blank_status.append("Aproved")
+
+			#zipping the blank data into one list
+			self.blank_project.append([self.s_blankId, self.s_blankAssay, self.blank_status])
+
+		else: 
+			pass		
+
+		#preparing the duplicate data
+
+		if len(self.s_DupId) > 0:
+		
+			self.DupDiff = []			
+
+			#calculate the difference of duyplicate samples
+			for i in range(0, len(self.s_DupId)):
+				self.DupDiff.append((abs(self.s_DupAssay[i] - self.DupAssay[i]) / self.DupAssay[i]) * 100 )
+
+			#zipping the duplicate data into one list
+			self.dup_project.append([self.s_DupId, self.s_DupAssay, self.DupId, self.DupAssay, self.DupDiff])
+
+		else: 
+			pass
+
+		#call funtino to make pdf Report
+		mr.makeReport.makePdf(self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical)
+
+	def get_Std_status(self, stdDev, sampAssay, stdAssay):
+
+		if (stdDev + stdAssay) > sampAssay > (stdAssay - stdDev):
+			self.std_status = "Approved"
+		elif (2*stdDev + stdAssay) > sampAssay > (stdAssay - 2*stdDev):				
+			self.std_status = "Revise"
+		elif (3*stdDev + stdAssay) > sampAssay > (stdAssay - 3*stdDev):
+			self.std_status = "Disapproved"
+		else: 
+			self.std_status = "Disapproved"
+
+		return self.std_status
 
 	def plotBlank(self):
 		"""This function plot the blank data in the chart"""	
@@ -469,17 +525,20 @@ class MainFrame( wx.Frame ):
 
 		#setting the plot setup
 		fig , ax_blank = plt.subplots(num="Blank Plot - Quality Control Chart", figsize=(8, 6))
-		ax_blank.plot(self.s_blank_num, self.s_blankAssay, label='Samples', marker='s', linestyle='--')
+		
+		ax_blank.plot(self.s_blank_num, self.s_blankAssay, label='Samples', color= 'b', marker='s', linestyle='--')
 		ax_blank.plot(blank_x, blank_rr, label='Blank Limit', color='red')
-		for i, lbl in enumerate(self.s_blankId):
-			ax_blank.annotate(self.s_blankId[i], (self.s_blank_num[i], self.s_blankAssay[i] + 0.0005), rotation=90, verticalalignment='bottom')
+		for sample in range(len(self.s_blankId)):
+			ax_blank.annotate(self.s_blankId[sample], (self.s_blank_num[sample], self.s_blankAssay[sample] + 0.0005), rotation=90, verticalalignment='bottom')
 		ax_blank.set_title("Blank Samples Plot - Quality Control Chart")
-		ax_blank.set_xlabel("Samples")
+		ax_blank.set_xlabel("Samples") 
 		ax_blank.set_ylabel("Au (ppm) Fire Assay")
 		ax_blank.set_xticklabels([])
 		ax_blank.set_yticks((0.00250, 0.01250, 0.02250))
 		ax_blank.grid(axis='y')
 		plt.legend()
+		blank_path = os.getcwd()+ "/.temp/blankchart.png"
+		plt.savefig(blank_path, dpi = 150, quality = 95)
 
 	def plotSTD(self):
 		"""This function read the standards database and get the round robin of std"""
@@ -492,31 +551,31 @@ class MainFrame( wx.Frame ):
 			fig, ax_std = plt.subplots(num="Standard Plot - Quality Control Chat", figsize=(8, 6))
 			fig.subplots_adjust(top= 0.90, bottom= 0.10, left= 0.10, right= 0.95, wspace = .15)
 
-			standard_rr, standard_x = self.getRoundRobin()
+			self.getRoundRobin()
 
 			#plot the 1st round robin (approval)
-			ax_std.plot(standard_x, standard_rr[0], label='Approved', color='green')
-			ax_std.plot(standard_x, standard_rr[3], color='green')
+			ax_std.plot(self.standard_x, self.standard_rr[0], label='Approved', color='green')
+			ax_std.plot(self.standard_x, self.standard_rr[3], color='green')
 
 			#plot the 2st round robin (revise)
-			ax_std.plot(standard_x, standard_rr[1], label='Revise', color='yellow')
-			ax_std.plot(standard_x, standard_rr[4], color='yellow')
+			ax_std.plot(self.standard_x, self.standard_rr[1], label='Revise', color='yellow')
+			ax_std.plot(self.standard_x, self.standard_rr[4], color='yellow')
 
 			#plot the 2st round robin (revise)
-			ax_std.plot(standard_x, standard_rr[2], label='Disapproved', color='red')
-			ax_std.plot(standard_x, standard_rr[5], color='red')
+			ax_std.plot(self.standard_x, self.standard_rr[2], label='Disapproved', color='red')
+			ax_std.plot(self.standard_x, self.standard_rr[5], color='red')
 
 			if len(self.standard_project[0]) > 1:
 				for sample in range(0, len(self.standard_project[0])):
 					#plot same standard in the figure
-					ax_blank.plot(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s', linestyle='--')
+					ax_std.plot(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s', linestyle='--')
 					#ax_std.scatter(sample, self.standard_project[0][sample][2], label='Standard', color= 'b', marker='s')
 					ax_std.annotate(self.standard_project[0][sample][1], (sample, self.standard_project[0][sample][2] + (self.standard_project[0][sample][2]* 0.05)),
 									rotation=90, verticalalignment='bottom')
 
 			else:
 				#plot a standard in the figure
-				ax_std.scatter(0, self.standard_project[0][0][2], label='Standard', color= 'b', marker='s')
+				ax_std.plot(0, self.standard_project[0][0][2], label='Standard', color= 'b', marker='s', linestyle='--')
 				ax_std.annotate(self.standard_project[0][0][1], (0, self.standard_project[0][0][2] + (self.standard_project[0][0][2]* 0.05)),
 								rotation=90, verticalalignment='bottom')
 
@@ -526,6 +585,7 @@ class MainFrame( wx.Frame ):
 			ax_std.set_xlabel("Samples")
 			ax_std.set_ylabel("Au (ppm) Fire Assay")
 			ax_std.grid(axis='y')
+			plt.legend(loc='upper right')
 
 		else:
 			
@@ -544,24 +604,24 @@ class MainFrame( wx.Frame ):
 			#set list of standards and plot
 			for i in range(0, len(self.standard_project)):
 			
-				standard_rr, standard_x = self.getRoundRobin(i)
+				self.standard_rr, self.standard_x = self.getRoundRobin(i)
 
 				#plot the 1st round robin (approval)
-				ax_std[i].plot(standard_x, standard_rr[0], label='Approved', color='green')
-				ax_std[i].plot(standard_x, standard_rr[3], color='green')
+				ax_std[i].plot(self.standard_x, self.standard_rr[0], label='Approved', color='green')
+				ax_std[i].plot(self.standard_x, self.standard_rr[3], color='green')
 
 				#plot the 2st round robin (revise)
-				ax_std[i].plot(standard_x, standard_rr[1], label='Revise', color='yellow')
-				ax_std[i].plot(standard_x, standard_rr[4], color='yellow')
+				ax_std[i].plot(self.standard_x, self.standard_rr[1], label='Revise', color='yellow')
+				ax_std[i].plot(self.standard_x, self.standard_rr[4], color='yellow')
 
 				#plot the 2st round robin (revise)
-				ax_std[i].plot(standard_x, standard_rr[2], label='Disapproved', color='red')
-				ax_std[i].plot(standard_x, standard_rr[5], color='red')
+				ax_std[i].plot(self.standard_x, self.standard_rr[2], label='Disapproved', color='red')
+				ax_std[i].plot(self.standard_x, self.standard_rr[5], color='red')
 
 				for sample in range(0, len(self.standard_project[i])):
 					#plot the scatter with standards
 					
-					ax_std[i].plot(sample, self.standard_project[i][sample][2], color= 'b', marker='s', linestyle='--')
+					ax_std[i].plot(sample, self.standard_project[i][sample][2], label='Standard', color= 'b', marker='s', linestyle='--')
 					ax_std[i].annotate(self.standard_project[i][sample][1], (sample, self.standard_project[i][sample][2] + (self.standard_project[i][sample][2]* 0.05)),
 											rotation=90, verticalalignment='bottom')
 	
@@ -571,18 +631,19 @@ class MainFrame( wx.Frame ):
 				ax_std[i].set_xlabel("Samples")
 				ax_std[i].set_ylabel("Au (ppm) Fire Assay")
 				ax_std[i].grid(axis='y')
-	
-			plt.legend(loc='upper right')
 
+				plt.legend(loc='upper right')
+		std_path = os.getcwd()+ "/.temp/stdchart.png"
+		plt.savefig(std_path, dpi = 150, quality = 95)
 
 	def getRoundRobin(self, standard_index = 0):
 
 		"""This function get round robin for plot standards"""
 
 		#get round robin of standard database
-		standard_rr = []
+		self.standard_rr = []
+		self.standard_x = []
 
-		std_x = []
 		for j in range(0, len(self.std_name)):
 			if self.std_name[j] == self.standard_project[standard_index][0][0]:
 				self.n_std = self.std_name[j]
@@ -591,27 +652,27 @@ class MainFrame( wx.Frame ):
 
 		#set the range of plots
 		for n in range(0, 20):
-			standard_rr.append([])
+			self.standard_rr.append([])
 		#set the round robin
 		for num in range(0, 20):
 			#append the num_x
-			std_x.append(num)
+			self.standard_x.append(num)
 			#append the std deviation
-			standard_rr[0].append(self.v_std + self.d_std) #set the approved (+)
-			standard_rr[1].append(self.v_std + (2*self.d_std))#set the revise (+)
-			standard_rr[2].append(self.v_std + (3*self.d_std))#set the disapproved (+)
-			standard_rr[3].append(self.v_std - self.d_std)#set the approved (-)
-			standard_rr[4].append(self.v_std - (2*self.d_std))#set the revise (-)
-			standard_rr[5].append(self.v_std - (3*self.d_std))#set the disapproved (-)
+			self.standard_rr[0].append(self.v_std + self.d_std) #set the approved (+)
+			self.standard_rr[1].append(self.v_std + (2*self.d_std))#set the revise (+)
+			self.standard_rr[2].append(self.v_std + (3*self.d_std))#set the disapproved (+)
+			self.standard_rr[3].append(self.v_std - self.d_std)#set the approved (-)
+			self.standard_rr[4].append(self.v_std - (2*self.d_std))#set the revise (-)
+			self.standard_rr[5].append(self.v_std - (3*self.d_std))#set the disapproved (-)
 
-		return standard_rr, std_x
+		return self.standard_rr, self.standard_x
 
 	def plotDUP(self):
 
 		"""This function plot the duplicate samples on the graphics"""
 
 		#get the assay of the duplicate
-		dup_assay  = self.get_ID()
+		dup_assay  = self.get_Dupassay()
 		#get the round robin of duplicate samples
 		XUp10,YUp10,XDn10,YDn10,XUp5,YUp5,XDn5,YDn5,XBis,YBis = np.loadtxt('db/dup_rr.csv', delimiter=',', skiprows=1, unpack=True)
 		#setting the plot setup
@@ -628,7 +689,7 @@ class MainFrame( wx.Frame ):
 		ax_dup.plot(XDn5, YDn5, color='yellow')
 
 		#plot the values of duplicate samples (x is the original sample and y is the dupicate of sample)
-		ax_dup.plot(self.sample_assay, dup_assay, label='Duplicate samples', marker='s', color='b', linestyle='--')
+		ax_dup.plot(self.s_DupAssay, self.DupAssay, label='Duplicate samples', marker='s', color='b', linestyle='--')
 
 		ax_dup.set_title("Duplicates Samples Plot - Quality Control Chart")
 		ax_dup.set_xlabel("Au (ppm) Fire Assay")
@@ -637,21 +698,20 @@ class MainFrame( wx.Frame ):
 		ax_dup.set_ylim(-0.5, 7)
 		ax_dup.grid(axis='y')
 		plt.legend(loc='lower right')
+
+		dup_path = os.getcwd()+ "/.temp/dupchart.png"
+		plt.savefig(dup_path, dpi = 150, quality = 95)
 		
-	def get_ID(self):
+	def get_Dupassay(self):
 		"""This function get id for the duplicate samples"""
 
-		#filkter the empty values of list
-		self.s_dup = list(filter(None, self.s_dup))
-
-		dup_assay = []
+		self.DupAssay = []		
 
 		for i in range(0, len(self.s_Id)):
-			for j in range(0, len(self.s_dup)):
-				if self.s_dup[j] == self.s_Id[i]:
-					dup_assay.append(self.s_Assay1[i])
-
-		return dup_assay
+			for j in range(0, len(self.DupId)):
+				if self.DupId[j] == self.s_Id[i]:
+					self.DupAssay.append(self.s_Assay1[i])
+		return self.DupAssay
 
 	def Onclose(self, event):
 
