@@ -174,6 +174,7 @@ class MainFrame( wx.Frame ):
 		box1.Fit( self.data_panel )
 		self.note.AddPage( self.data_panel, u"DATA", True )
 
+		"""
 		#Set the report panel
 		self.report_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gs_report = wx.BoxSizer(wx.VERTICAL)
@@ -184,7 +185,7 @@ class MainFrame( wx.Frame ):
 		self.report_panel.Layout()
 		gs_report.Fit( self.report_panel )
 
-		self.note.AddPage( self.report_panel, u"Report", False )
+		self.note.AddPage( self.report_panel, u"Report", False )"""
 
 		box.Add( self.note, 1, wx.EXPAND |wx.ALL, 5 )
 
@@ -471,9 +472,9 @@ class MainFrame( wx.Frame ):
 
 			for i in range(0, len(self.s_blankAssay)):
 				if self.s_blankAssay[i] > 0.01:
-					self.blank_status.append("Disaproved")
+					self.blank_status.append("Disapproved")
 				else: 
-					self.blank_status.append("Aproved")
+					self.blank_status.append("Approved")
 
 			#zipping the blank data into one list
 			self.blank_project.append([self.s_blankId, self.s_blankAssay, self.blank_status])
@@ -498,7 +499,7 @@ class MainFrame( wx.Frame ):
 			pass
 
 		#call funtino to make pdf Report
-		mr.makeReport.makePdf(self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical)
+		mr.makeReport.makePdf(self, self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical)
 
 	def get_Std_status(self, stdDev, sampAssay, stdAssay):
 

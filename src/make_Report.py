@@ -11,11 +11,12 @@
 from fpdf import FPDF
 from datetime import date
 import os
+import wx 
 
 
 class makeReport():
 
-    def makePdf(blank_data, dup_data, std_data, batch_name, technical_manager):
+    def makePdf(self, blank_data, dup_data, std_data, batch_name, technical_manager):
 
 
         #set today date 
@@ -73,28 +74,30 @@ class makeReport():
             pdf.cell(40, 10, ln = 2)
             pdf.cell(40, 10, ln = 2)
 
-        else:
-            for i in range (0, len(blank_data[0][0])):
-                pdf.cell(50, 10, txt= '%s' % (blank_data[0][0][i]), border= 'B' , ln = 0, align = 'C')
-                pdf.cell(40, 10, txt= '%.3f' % (blank_data[0][1][i]), border= 'B' , ln = 0, align = 'C')
-                pdf.cell(40, 10, txt= '%s' % (blank_data[0][2][i]), border= 'B' , ln = 1, align = 'C')
+            #set the number of samples
+            pdf.set_font(family = 'arial', size = 10)
+            pdf.cell(190, 10, txt= f'Number of samples : {len(blank_data[0][0])}', ln= 2, align='R')
 
-
-        #set the number of samples
-        pdf.set_font(family = 'arial', size = 10)
-        pdf.cell(190, 10, txt= f'Number of samples : {len(blank_data[0][0])}', ln= 2, align='R')
-
-        if not len(blank_data):
             #image of chart 
             blank_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(blank_path, x= None, y = None, w = 170)
 
         else:
+            for i in range (0, len(blank_data[0][0])):
+                pdf.cell(50, 10, txt= '%s' % (blank_data[0][0][i]), border= 'B' , ln = 0, align = 'C')
+                pdf.cell(40, 10, txt= '%.3f' % (blank_data[0][1][i]), border= 'B' , ln = 0, align = 'C')
+                pdf.cell(40, 10, txt= '%s' % (blank_data[0][2][i]), border= 'B' , ln = 1, align = 'C')
+
+            #set the number of samples
+            pdf.set_font(family = 'arial', size = 10)
+            pdf.cell(190, 10, txt= f'Number of samples : {len(blank_data[0][0])}', ln= 2, align='R')
+
             #image of chart 
             blank_path = (os.path.normpath(os.getcwd()) + "/.chart/blankchart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(blank_path, x= None, y = None, w = 170)
+
 
         #################################
 
@@ -125,6 +128,15 @@ class makeReport():
             pdf.cell(40, 10, ln = 2)
             pdf.cell(40, 10, ln = 2)
 
+            #set the number of samples
+            pdf.set_font(family = 'arial', size = 10)
+            pdf.cell(190, 10, txt= 'Number of samples : 0 ', ln= 2, align='R')
+
+            #image of chart 
+            dup_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
+            pdf.cell(90, 10, " ", 0, 2, 'C')
+            pdf.image(dup_path, x= None, y = None, w = 170)
+
         else:
             for i in range(0, len(dup_data[0][0])):                
                 pdf.cell(35, 10, txt= '%s' % (dup_data[0][0][i]), border= 'B' , ln = 0, align = 'C')
@@ -133,17 +145,10 @@ class makeReport():
                 pdf.cell(35, 10, txt= '%.3f' % (dup_data[0][3][i]), border = 'B', ln = 0, align = 'C')
                 pdf.cell(35, 10, txt= '%.2f' % (dup_data[0][4][i]) + '%', border = 'B', ln = 1, align = 'C')
 
-        #set the number of samples
-        pdf.set_font(family = 'arial', size = 10)
-        pdf.cell(190, 10, txt= f'Number of samples : {len(dup_data[0][0])}', ln= 2, align='R')
+            #set the number of samples
+            pdf.set_font(family = 'arial', size = 10)
+            pdf.cell(190, 10, txt= f'Number of samples : {len(dup_data[0][0])}', ln= 2, align='R')
 
-        if not len(dup_data):
-            #image of chart 
-            dup_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
-            pdf.cell(90, 10, " ", 0, 2, 'C')
-            pdf.image(dup_path, x= None, y = None, w = 170)
-
-        else:
             #image of chart 
             dup_path = (os.path.normpath(os.getcwd()) + "/.chart/dupchart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
@@ -182,7 +187,17 @@ class makeReport():
             pdf.cell(40, 10, ln = 2)
             pdf.cell(40, 10, ln = 2)
             pdf.cell(40, 10, ln = 2)
-            pdf.cell(40, 10, ln = 2)        
+            pdf.cell(40, 10, ln = 2)      
+
+            
+            #set the number of samples
+            pdf.set_font(family = 'arial', size = 10)
+            pdf.cell(190, 10, txt= f'Number of samples : 0', ln= 2, align='R')  
+
+                        #image of chart 
+            std_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
+            pdf.cell(90, 10, " ", 0, 2, 'C')
+            pdf.image(std_path, x= None, y = None, w = 170)
         
         else:
             for i in range(0, len(std_data)):
@@ -196,27 +211,55 @@ class makeReport():
                     pdf.cell(25, 10, txt= '%.2f' % (std_data[i][j][5]) + '%', border = 'B', ln = 0, align = 'C')
                     pdf.cell(20, 10, txt= '%s' % (std_data[i][j][6]), border = 'B', ln = 1, align = 'C')
 
-                    cont+1
+                    cont+=1
 
-        #set the number of samples
-        pdf.set_font(family = 'arial', size = 10)
-        pdf.cell(190, 10, txt= f'Number of samples : {cont}', ln= 2, align='R')
+            print(cont)
 
-        if not len(std_data):
-            #image of chart 
-            std_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
-            pdf.cell(90, 10, " ", 0, 2, 'C')
-            pdf.image(std_path, x= None, y = None, w = 170)
+            #set the number of samples
+            pdf.set_font(family = 'arial', size = 10)
+            pdf.cell(190, 10, txt= f'Number of samples : {cont}', ln= 2, align='R') 
 
-        else:
             #image of chart 
             std_path = (os.path.normpath(os.getcwd()) + "/.chart/stdchart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(std_path, x= None, y = None, w = 170)
 
 
-        #save the final file 
-        pdf.output('/home/gmene/Documents/test.pdf', 'F')
+        #get path to save report 
+        try:
+
+            dlg = wx.FileDialog(self, "Save Report to file:", ".", "", "PDF (*.pdf)|*.pdf", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+
+            if (dlg.ShowModal() == wx.ID_OK):
+                pathname = dlg.GetPath()
+
+                #save the final file 
+                pdf.output(pathname, 'F')
+
+                wx.MessageBox(f"File saved to {pathname} ", "The file was saved sucessfully.")
+
+                return
+
+            if (dlg.ShowModal() == wx.ID_CANCEL):
+                return
+        
+        except:
+
+            # Month abbreviation, day and year	
+            date_Today = today.strftime("%d-%b-%Y")
+
+            defaultPath = str((os.path.normpath(os.getcwd()) + "/.chart/report_" + date_Today + ".pdf"))
+
+            #save the final file 
+            pdf.output(defaultPath, 'F')
+
+            wx.MessageBox(f"File saved to {defaultPath}.", "A error has ocurred... ")
+
+
+
+
+
+
 
 
 
