@@ -20,6 +20,7 @@ import src.settings_dialog
 import datetime as date
 import os
 import src.make_Report as mr
+from wx.lib.pdfviewer import pdfViewer, pdfButtonPanel
 
 # Set MainFrame
 class MainFrame( wx.Frame ):
@@ -116,7 +117,7 @@ class MainFrame( wx.Frame ):
 		self.open_file.SetBitmap( wx.Bitmap( u"img/opendata_47.png", wx.BITMAP_TYPE_ANY ) )
 		box2.Add( self.open_file, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
-        #Set open file data function
+		#Set open file data function
 		self.open_file.Bind(wx.EVT_BUTTON, self.LoadData)
 
 		box2.Add( ( 0, 0), 1, 0, 5)
@@ -129,7 +130,7 @@ class MainFrame( wx.Frame ):
 		self.clear_datagrid.SetBitmap( wx.Bitmap( u"img/trash_47.png", wx.BITMAP_TYPE_ANY ) )
 		box2.Add( self.clear_datagrid, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 
-        #Set open file data function
+		#Set open file data function
 		self.clear_datagrid.Bind(wx.EVT_BUTTON, self.clear_DataGrid)
 
 		box2.Add( ( 0, 0), 1, 0, 5 )
@@ -175,18 +176,34 @@ class MainFrame( wx.Frame ):
 		box1.Fit( self.data_panel )
 		self.note.AddPage( self.data_panel, u"DATA", True )
 
-		"""
+
+
 		#Set the report panel
 		self.report_panel = wx.Panel( self.note, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gs_report = wx.BoxSizer(wx.VERTICAL)
 
-		#gs_report.Add( self.report_html, 1, wx.EXPAND |wx.ALL, 5 )
+
+		self.buttonpanel = pdfButtonPanel(self.report_panel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
+
+		self.pdfViewer = pdfViewer(self.report_panel, wx.ID_ANY, wx.DefaultPosition,
+								wx.DefaultSize,
+								wx.HSCROLL|wx.VSCROLL|wx.SUNKEN_BORDER)
+		self.pdfViewer.UsePrintDirect = "False"		
+
+		# introduce buttonpanel and viewer to each other
+		self.buttonpanel.viewer = self.pdfViewer
+		self.pdfViewer.buttonpanel = self.buttonpanel
+			
+
+		#add the buutonpanel and pdfviewer to boxsizer
+		gs_report.Add( self.buttonpanel, 1, wx.ALL, 5 )
+		gs_report.Add( self.pdfViewer, 100, wx.EXPAND |wx.ALL, 5 )
 
 		self.report_panel.SetSizer( gs_report )
 		self.report_panel.Layout()
 		gs_report.Fit( self.report_panel )
 
-		self.note.AddPage( self.report_panel, u"Report", False )"""
+		self.note.AddPage( self.report_panel, u"Report", False )
 
 		box.Add( self.note, 1, wx.EXPAND |wx.ALL, 5 )
 
@@ -255,7 +272,12 @@ class MainFrame( wx.Frame ):
 	def open_Setting(self, event):
 		"""This function open the setting dialog
 		"""
+		#set the icon of app 
+		icon_path = os.path.normpath(os.getcwd()) + "/img/qaqcmin_icon.png"
+		icon = wx.Icon(icon_path, wx.BITMAP_TYPE_PNG)
+
 		set_dialog = src.settings_dialog.SETDialog(self)
+		set_dialog.SetIcon(icon)
 		set_dialog.Show()
 
 	def clear_DataGrid(self, event):
@@ -353,7 +375,13 @@ class MainFrame( wx.Frame ):
 	def StandardDB(self, event):
 		""" This fuction open the Standard managment dilaog.
 		"""
+
+		#set the icon of app 
+		icon_path = os.path.normpath(os.getcwd()) + "/img/qaqcmin_icon.png"
+		icon = wx.Icon(icon_path, wx.BITMAP_TYPE_PNG)
+
 		std_dialog = src.standard_dialog.STDDialog(self)
+		std_dialog.SetIcon(icon)
 		std_dialog.Show()
 
 	def runProject(self, event):
@@ -548,7 +576,9 @@ class MainFrame( wx.Frame ):
 		self.Get_setting()
 
 		#call funtino to make pdf Report
-		mr.makeReport.makePdf(self, self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical, self.l_path)
+		pdfFilePath= mr.makeReport.makePdf(self, self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical, self.l_path)
+
+		self.pdfViewer.LoadFile(pdfFilePath)	
 
 	def get_Std_status(self, stdDev, sampAssay, stdAssay):
 
@@ -769,7 +799,14 @@ class MainFrame( wx.Frame ):
 
 
 if __name__ == "__main__":
-    app = wx.App()
-    frame = MainFrame(None)
-    frame.Show()
-    app.MainLoop()
+
+	#Create the app 
+	app = wx.App()
+	#set the icon of app 
+	icon_path = os.path.normpath(os.getcwd()) + "/img/qaqcmin_icon.png"
+	icon = wx.Icon(icon_path, wx.BITMAP_TYPE_PNG)
+
+	frame = MainFrame(None)
+	frame.SetIcon(icon)
+	frame.Show()
+	app.MainLoop()

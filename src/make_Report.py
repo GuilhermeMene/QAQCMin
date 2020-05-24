@@ -240,7 +240,7 @@ class makeReport():
 
                 wx.MessageBox(f"File saved to {pathname} ", "The file was saved sucessfully.")
 
-                return
+                return pathname
 
             if (dlg.ShowModal() == wx.ID_CANCEL):
                 return
@@ -256,6 +256,10 @@ class makeReport():
             pdf.output(defaultPath, 'F')
 
             wx.MessageBox(f"File saved to {defaultPath}.", "A error has ocurred... ")
+
+            #return the correct path of pdf file
+
+            return defaultPath
 
 
 
