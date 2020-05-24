@@ -1,5 +1,8 @@
 
-<h3 align="center">QAQCMin</h3>
+<p align="center">
+  <a href="#">
+    <img src="https://github.com/GuilhermeMene/QAQCMin/blob/master/img/qaqcmin_icon.png" style="max-width:100%;" alt="Icon">
+</a>
 <p align="center">
   <a href="#">
     <img src="https://img.shields.io/github/license/GuilhermeMene/QAQCMin?style=for-the-badge" style="max-width:100%;" alt="License">
