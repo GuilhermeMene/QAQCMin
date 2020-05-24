@@ -16,6 +16,7 @@ import sys
 import sqlite3 as sqlite
 import matplotlib.pyplot as plt
 import src.standard_dialog
+import src.settings_dialog
 import datetime as date
 import os
 import src.make_Report as mr
@@ -200,17 +201,62 @@ class MainFrame( wx.Frame ):
 		#Load std for list
 		self.Load_STD()
 
+		#set the setting parameters
+		self.Get_setting()
+
+		#clear temporary files 
+		self.Clear_tempFiles()
+
 		#set Datagrid cell Editor for fill with list
 		self.type_editor = wx.grid.GridCellChoiceEditor(self.type, True)
 		#set the editor cell
 		for i in range(0,100):
 			self.Datagrid.SetCellEditor(i, 1, self.type_editor)
 
+	def Clear_tempFiles(self):
+		"""This function clear temporary files 
+		"""
+		#Remove the blank chart
+		if os.path.isfile(os.path.normpath(os.getcwd()) + "/.chart/blankchart.png"):
+			os.remove(os.path.normpath(os.getcwd()) + "/.chart/blankchart.png")
+		else:
+			pass
+		#Remove the duplicate chart
+		if os.path.isfile(os.path.normpath(os.getcwd()) + "/.chart/dupchart.png"):
+			os.remove(os.path.normpath(os.getcwd()) + "/.chart/dupchart.png")
+		else:
+			pass
+		#Remove the standard chart
+		if os.path.isfile(os.path.normpath(os.getcwd()) + "/.chart/stdchart.png"):
+			os.remove(os.path.normpath(os.getcwd()) + "/.chart/stdchart.png")
+		else:
+			pass
+
+	def Get_setting(self):
+
+		#read setting file 
+		set_path = os.path.normpath(os.getcwd()) + "/setting"
+		with open(set_path, "r") as set_file:
+
+			project_settings = []
+			for line in set_file:
+				line = line.rstrip('\n')
+				project_settings.append(line)
+
+		self.l_path = str(project_settings[0])
+		self.s_unit = str(project_settings[1])
+
+		#check if logo is empty
+		if not self.l_path:
+			self.l_path = os.path.normpath(os.getcwd()) + "/img/nologo.png"
+		else: 
+			pass
+
 	def open_Setting(self, event):
 		"""This function open the setting dialog
 		"""
-		wx.MessageBox("This function is not implemented yet", "Sorry")
-
+		set_dialog = src.settings_dialog.SETDialog(self)
+		set_dialog.Show()
 
 	def clear_DataGrid(self, event):
 		""" This fuction clear datagrid
@@ -490,7 +536,7 @@ class MainFrame( wx.Frame ):
 
 			#calculate the difference of duyplicate samples
 			for i in range(0, len(self.s_DupId)):
-				self.DupDiff.append((abs(self.s_DupAssay[i] - self.DupAssay[i]) / self.DupAssay[i]) * 100 )
+				self.DupDiff.append((abs(self.s_DupAssay[i] - self.DupAssay[i]) / self.DupAssay[i]) * 100 )			
 
 			#zipping the duplicate data into one list
 			self.dup_project.append([self.s_DupId, self.s_DupAssay, self.DupId, self.DupAssay, self.DupDiff])
@@ -498,8 +544,11 @@ class MainFrame( wx.Frame ):
 		else: 
 			pass
 
+		#update the logo path 
+		self.Get_setting()
+
 		#call funtino to make pdf Report
-		mr.makeReport.makePdf(self, self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical)
+		mr.makeReport.makePdf(self, self.blank_project, self.dup_project, self.standard_project, self.batch_name, self.technical, self.l_path)
 
 	def get_Std_status(self, stdDev, sampAssay, stdAssay):
 

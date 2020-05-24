@@ -20,14 +20,14 @@ QAQCMin is a software for control of quality and assurance in geochemical analys
 
 The main features of the QAQCMin is the control of: 
 * Duplicate 
-* Stantard 
+* Standard 
 * Blank Samples
 
 Making plots and report of batch control.
 
 #### Dependencies
 
-* sqlite
+* sqlite  
 * wxpython
 * numpy
 * matplotlib

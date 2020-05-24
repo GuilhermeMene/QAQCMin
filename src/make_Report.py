@@ -12,11 +12,12 @@ from fpdf import FPDF
 from datetime import date
 import os
 import wx 
+import platform
 
 
 class makeReport():
 
-    def makePdf(self, blank_data, dup_data, std_data, batch_name, technical_manager):
+    def makePdf(self, blank_data, dup_data, std_data, batch_name, technical_manager, logo_path):
 
 
         #set today date 
@@ -44,9 +45,11 @@ class makeReport():
 
 
         #Add a image of company 
-        image_path = r'/mnt/Arquivos/Database/Arica-Database/logo_arica.jpeg' 
-        pdf.image(image_path, x= 10, y = 10, w = 30)
 
+        plat = platform.system()
+
+        #set the logo in report
+        pdf.image(logo_path, x= 10, y = 10, w = 40)
 
         #Add line for separate the 
         pdf.line(0, 50, 210, 50)
@@ -79,7 +82,7 @@ class makeReport():
             pdf.cell(190, 10, txt= f'Number of samples : {len(blank_data[0][0])}', ln= 2, align='R')
 
             #image of chart 
-            blank_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
+            blank_path = (os.path.normpath(os.getcwd()) + "/img/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(blank_path, x= None, y = None, w = 170)
 
@@ -133,7 +136,7 @@ class makeReport():
             pdf.cell(190, 10, txt= 'Number of samples : 0 ', ln= 2, align='R')
 
             #image of chart 
-            dup_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
+            dup_path = (os.path.normpath(os.getcwd()) + "/img/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(dup_path, x= None, y = None, w = 170)
 
@@ -195,7 +198,7 @@ class makeReport():
             pdf.cell(190, 10, txt= f'Number of samples : 0', ln= 2, align='R')  
 
                         #image of chart 
-            std_path = (os.path.normpath(os.getcwd()) + "/.chart/nochart.png")
+            std_path = (os.path.normpath(os.getcwd()) + "/img/nochart.png")
             pdf.cell(90, 10, " ", 0, 2, 'C')
             pdf.image(std_path, x= None, y = None, w = 170)
         
@@ -213,7 +216,6 @@ class makeReport():
 
                     cont+=1
 
-            print(cont)
 
             #set the number of samples
             pdf.set_font(family = 'arial', size = 10)
