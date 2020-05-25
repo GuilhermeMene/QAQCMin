@@ -35,6 +35,13 @@ Making plots and report of batch control.
 * numpy
 * matplotlib
 
+#### Installation 
+
+For windows users: 
+
+Windows installer - [Click here](https://github.com/GuilhermeMene/QAQCMin/releases/download/0.1/QAQCMin.exe)
+
+
 #### License
 
 QAQCMin is a free software licensed under [MIT License](LICENSE).
